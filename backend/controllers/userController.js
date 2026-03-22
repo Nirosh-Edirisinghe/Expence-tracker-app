@@ -151,7 +151,50 @@ const updateProfile = async (req, res) => {
       user,
       message: "user update success"
     })
-    
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error'
+    })
+  }
+}
+
+// chnage password
+const updatePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword || newPassword.lenght < 6) {
+    return res.status(400).json({
+      success: false,
+      message: "Password invalid or too short"
+    })
+  }
+
+  try {
+    const user = await userModal.findById(req.user.id).select("password");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User Not found"
+      })
+    }
+
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is in correct"
+      })
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    res.json({
+      success: true,
+      message: "Password changed"
+    })
+
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -162,4 +205,4 @@ const updateProfile = async (req, res) => {
 }
 
 
-export { registerUser, loginUser, getCurrentUser, updateProfile }
+export { registerUser, loginUser, getCurrentUser, updateProfile, updatePassword }
