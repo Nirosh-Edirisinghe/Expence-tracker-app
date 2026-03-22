@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 
 const TOKEN_EXPIRES = '24h'
 const createToken = (userId) => {
-  jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: TOKEN_EXPIRES })
+ return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: TOKEN_EXPIRES })
 
 }
 // register user
@@ -43,6 +43,7 @@ const registerUser = async (req, res) => {
     const hashed = await bcrypt.hash(password, 10)
     const user = await userModal.create({ name, email, password: hashed })
     const token = createToken(user._id);
+    
     res.status(201).json({
       success: true,
       token,
@@ -69,7 +70,7 @@ const loginUser = async (req, res) => {
 
   try {
     const user = await userModal.findOne({ email });
-    if (user) {
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: "Invalid credential"
