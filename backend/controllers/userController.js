@@ -99,5 +99,67 @@ const loginUser = async (req, res) => {
   }
 }
 
+// get user funcion
+const getCurrentUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await userModal.findById(userId).select("name email");
 
-export { registerUser, loginUser }
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      })
+    }
+    res.json({ success: true, user })
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error'
+    })
+  }
+}
+
+// update user profile
+const updateProfile = async (req, res) => {
+  const { name, email } = req.body;
+  if (!name || !email || !validator.isEmail(email)) {
+    return res.status(400).json({
+      success: false,
+      message: "valid email and name are required"
+    });
+  }
+
+  try {
+    const exists = await userModal.findOne({ email, _id: { $ne: req.user.id } });
+    if (exists) {
+      return res.status(409).json({
+        success: false,
+        message: "Email already in use"
+      })
+    }
+
+    const user = await userModal.findByIdAndUpdate(
+      req.user.id,
+      { name, email },
+      { new: true, runValidators: true, select: "name, email" }
+    )
+
+    res.json({
+      success: true,
+      user,
+      message: "user update success"
+    })
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error'
+    })
+  }
+}
+
+
+export { registerUser, loginUser, getCurrentUser, updateProfile }
