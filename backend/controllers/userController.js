@@ -51,13 +51,53 @@ const registerUser = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({
-      success:false,
-      message:'Servere Error'
+      success: false,
+      message: 'Servere Error'
+    })
+  }
+}
+
+// login user
+const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "Both feild are required"
+    })
+  }
+
+  try {
+    const user = await userModal.findOne({ email });
+    if (user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credential"
+      })
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credential"
+      })
+    }
+
+    const token = createToken(user._id);
+    res.json({
+      success: true,
+      token,
+      user: { id: user._id, name: user.name, email: user.email }
+    })
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Servere Error'
     })
   }
 }
 
 
-
-
-export { registerUser }
+export { registerUser, loginUser }
