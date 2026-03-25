@@ -78,7 +78,7 @@ const updateExpense = async (req, res) => {
 }
 
 // delete expense
-const deleteExpense = async (req, res) =>{
+const deleteExpense = async (req, res) => {
   try {
     const expense = await expenseModal.findByIdAndDelete({ _id: req.params.id });
     if (!expense) {
@@ -100,6 +100,31 @@ const deleteExpense = async (req, res) =>{
   }
 }
 
+// download excel for expense
+const downloadExpenseExcel = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const expense = await expenseModal.find({ userId }).sort({ date: -1 });
+    const plainData = expense.map((exp) => ({
+      Description: exp.description,
+      Amount: exp.amount,
+      Category: exp.category,
+      Date: new Date(exp.date).toLocaleDateString(),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(plainData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "expenseModal");
+    XLSX.writeFile(workbook, "expense_details.xlsx");
+    res.download("expense_details.xlsx")
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Servere Error'
+    })
+  }
+}
 
 
-export { addExpense, getExpense, updateExpense, deleteExpense }
+export { addExpense, getExpense, updateExpense, deleteExpense, downloadExpenseExcel }
