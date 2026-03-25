@@ -1,4 +1,4 @@
-import expenceModal from "../models/expenceModal.js";
+import expenseModal from "../models/expenceModal.js";
 import getDateRange from "../utils/dataFilter";
 
 // add expense
@@ -14,7 +14,7 @@ const addExpense = async (req, res) => {
       })
     }
 
-    const newExpense = new expenceModal({
+    const newExpense = new expenseModal({
       userId,
       description,
       amount,
@@ -35,5 +35,71 @@ const addExpense = async (req, res) => {
   }
 }
 
+// to get all expense
+const getExpense = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const expense = await expenseModal.find({ userId }).sort({ date: -1 });
+    res.json(expense);
 
-export {addExpense}
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Servere Error'
+    })
+  }
+}
+
+// update expense
+const updateExpense = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+  const { description, amount } = req.body;
+  try {
+    const updatedExpense = await expenseModal.findOneAndUpdate({ _id: id, userId },
+      { description, amount }, { new: true }
+    );
+
+    if (!updatedExpense) {
+      return res.status(404).json({
+        success: false,
+        message: "Expense not found"
+      })
+    }
+    res.json({ success: true, message: "Expense updated successfully.", date: updatedExpense })
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Servere Error'
+    })
+  }
+}
+
+// delete expense
+const deleteExpense = async (req, res) =>{
+  try {
+    const expense = await expenseModal.findByIdAndDelete({ _id: req.params.id });
+    if (!expense) {
+      return res.status(404).json({
+        success: false,
+        message: "Expense not found"
+      })
+    }
+    return res.json({
+      success: true,
+      message: "Expense deleted successfully."
+    })
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Servere Error'
+    })
+  }
+}
+
+
+
+export { addExpense, getExpense, updateExpense, deleteExpense }

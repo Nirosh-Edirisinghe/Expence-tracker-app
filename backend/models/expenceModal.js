@@ -32,4 +32,4 @@ const expenceSchema = new mongoose.Schema({
 
 const expenseModal = mongoose.models.expense || mongoose.model("expense", expenceSchema);
 
-export default expenceModal
+export default expenseModal
