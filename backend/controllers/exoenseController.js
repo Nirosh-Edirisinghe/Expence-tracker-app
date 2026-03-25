@@ -1,5 +1,6 @@
 import expenseModal from "../models/expenceModal.js";
-import getDateRange from "../utils/dataFilter";
+import getDateRange from "../utils/dataFilter.js";
+import XLSX from 'xlsx'
 
 // add expense
 const addExpense = async (req, res) => {
@@ -126,5 +127,42 @@ const downloadExpenseExcel = async (req, res) => {
   }
 }
 
+// get overview of Expense
+const getExpenseOverview = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { range = "monthly" } = req.query;
+    const { start, end } = getDateRange(range)
 
-export { addExpense, getExpense, updateExpense, deleteExpense, downloadExpenseExcel }
+    const expense = await expenseModal.find({
+      userId,
+      date: { $gte: start, $lte: end },
+    }).sort({ date: -1 })
+
+    const totalExpense = expense.reduce((acc, cur) => acc + cur.amount, 0);
+    const averageExpense =
+      expense.length > 0 ? totalExpense / expense.length : 0;
+    const numberOfTransactions = expense.length;
+
+    const recentTransactions = expense.slice(0, 5);
+
+    res.json({
+      success: true,
+      data: {
+        totalExpense,
+        averageExpense,
+        numberOfTransactions,
+        recentTransactions,
+        range
+      }
+    })
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Servere Error'
+    })
+  }
+}
+
+export { addExpense, getExpense, updateExpense, deleteExpense, downloadExpenseExcel, getExpenseOverview }
