@@ -1,8 +1,11 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { navbarStyles } from '../assets/dummyStyles'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown, User } from "lucide-react";
+import { ChevronDown, LogOut, User } from "lucide-react";
 import logo from '../assets/logo.png'
+import axios from 'axios'
+
+const BASE_URL = 'http://localhost:4000/api'
 
 const Navbar = ({ user: propUser, onLogout }) => {
   const navigate = useNavigate();
@@ -14,7 +17,47 @@ const Navbar = ({ user: propUser, onLogout }) => {
     email: "",
   }
 
+  // To fetch the user data from server
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) return;
+
+        const response = await axios.get(`${BASE_URL}/user/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const userData = response.data.user || response.data;
+        setUser(userData)
+      } catch (error) {
+        console.error("Failed to load profile", error);
+      }
+    }
+    if (!propUser) {
+      fetchUserData();
+    }
+  }, [propUser])
+
   const toggleMenu = () => setMenuOpen((prev) => !prev);
+
+  const handleLogout = () => {
+    setMenuOpen(false)
+    localStorage.removeItem('token');
+    onLogout?.();
+    navigate('/login')
+  }
+
+  // close the toggle menu if click the outside the box
+   useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className={navbarStyles.header}>
@@ -24,7 +67,7 @@ const Navbar = ({ user: propUser, onLogout }) => {
         <div onClick={() => navigate("/")} className={navbarStyles.logoContainer}>
           <div className={navbarStyles.logoImage}>
             <img src={logo} alt="logo" />
-            
+
           </div>
           <span className={navbarStyles.logoText}>Expences Tracker</span>
         </div>
@@ -82,6 +125,15 @@ const Navbar = ({ user: propUser, onLogout }) => {
                   >
                     <User className='w-4 h-4' />
                     <span>My Profile</span>
+                  </button>
+                </div>
+
+                <div className={navbarStyles.menuItemBorder}>
+                  <button onClick={handleLogout}
+                    className={navbarStyles.logoutButton}
+                  >
+                    <LogOut className='w-4 h-4' />
+                    <span>Logout</span>
                   </button>
                 </div>
 
